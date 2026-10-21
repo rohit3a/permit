@@ -1,0 +1,12 @@
+{
+  "name": "permit",
+  "owner": { "name": "rohit3a", "url": "https://github.com/rohit3a" },
+  "plugins": [
+    {
+      "name": "permit",
+      "source": "./plugins/permit",
+      "description": "Permissions without the pain: ask instead of block, trust profiles, a hard floor, one pane for every rule and setting."
+    }
+  ],
+  "metadata": { "description": "Permit: a permission manager for Claude Code." }
+}

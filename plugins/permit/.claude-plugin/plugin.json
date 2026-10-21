@@ -1,0 +1,24 @@
+{
+  "name": "permit",
+  "version": "1.3.1",
+  "description": "Permissions without the pain: ask instead of block, trust profiles, a hard floor, and one pane for every rule and setting.",
+  "author": { "name": "rohit3a", "url": "https://github.com/rohit3a" },
+  "repository": "https://github.com/rohit3a/permit",
+  "license": "MIT",
+  "keywords": ["permissions", "auto-mode", "security", "secrets"],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "askOnBlock": {
+      "type": "boolean",
+      "title": "Ask me when auto mode blocks something",
+      "description": "Put a question card in front of you instead of a dead end. Off: blocks wait in the band and the pane.",
+      "default": true
+    },
+    "clipboardSeconds": {
+      "type": "number",
+      "title": "Seconds a copied secret stays on the clipboard",
+      "description": "secret_to_clipboard clears the clipboard after this many seconds.",
+      "default": 120
+    }
+  }
+}
