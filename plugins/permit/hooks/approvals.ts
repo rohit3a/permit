@@ -56,6 +56,18 @@ const titles = (hits: PermitFloorCheck[]) => hits.map(h => h.title).join('; ')
 export const flatRefusal = (hit: PermitFloorCheck) =>
   `Permit hard floor: ${hit.title}. This is never allowed here; do it another way or tell the user what you needed.`
 
+/** The question card Permit puts in front of the person when no approval service runs here. */
+export const FLOOR_RUN = 'Run it once'
+export const FLOOR_DENY = 'Deny'
+export const floorQuestion = (hits: PermitFloorCheck[], command: string, isSubagent: boolean) =>
+  `${isSubagent ? 'A subagent' : 'Claude'} wants to do something on Permit's floor (${titles(hits)}): ${command} · Let this exact command run once?`
+
+export const askedDeniedRefusal = (hits: PermitFloorCheck[], note?: string) =>
+  `Permit hard floor: ${titles(hits)}. The user said no${note ? `: ${note}` : ''}. Do not retry or reword it; do it another way or ask the user.`
+
+export const unansweredRefusal = (hits: PermitFloorCheck[]) =>
+  `Permit hard floor: ${titles(hits)}. Permit asked the user and got no answer. Tell the user what you needed; running the exact same command again asks them again.`
+
 export const pendingRefusal = (hits: PermitFloorCheck[], id: string) =>
   `Permit hard floor: ${titles(hits)}. Request ${id} for this exact command is waiting for the user's approval on their own device. Do not reword it or try another way: Permit tells you here when they decide, and then you run the exact same command again. Meanwhile carry on with other work, or tell the user what is waiting.`
 
