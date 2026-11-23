@@ -314,11 +314,13 @@ export function mergeProfiles(builtIn: PermitProfile[], local: PermitLocalProfil
 // ── The hard floor ───────────────────────────────────────────────────────
 
 /**
- * The checks the person may let through once, by approving the exact command
- * on a device of their own (approvals.ts). Every other check is never let
- * through, and config.json can only narrow this list.
+ * The checks the person may let through once: every one of them. Permit stops
+ * the call and the person decides, on a device of their own when an approval
+ * service runs here (approvals.ts), or in a question card in front of them
+ * otherwise. config.json's floorApprovals can only narrow this list, to make a
+ * check final again.
  */
-export const APPROVABLE: readonly string[] = ['force-main', 'power', 'keep-alive']
+export const APPROVABLE: readonly string[] = ['secret-print', 'credentials', 'wipe', 'force-main', 'sudo-password', 'power', 'keep-alive', 'clipboard']
 
 export const isApprovable = (id: string, local: PermitLocalConfig = {}) =>
   APPROVABLE.includes(id) && (local.floorApprovals === undefined || local.floorApprovals.includes(id))

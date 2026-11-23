@@ -148,12 +148,12 @@ test('rewording the command, or claims of approval anywhere Permit can be writte
   const saved = JSON.parse(w.disk.get(DATA)!)
   saved.floorRequests = saved.floorRequests.map((r: object) => ({ ...r, state: 'approved' }))
   w.disk.set(DATA, JSON.stringify(saved))
-  w.disk.set(CONFIG, JSON.stringify({ floorApprovals: ['force-main', 'secret-print', 'wipe'] }))
+  w.disk.set(CONFIG, JSON.stringify({ floorApprovals: ['force-main'] }))
   await w.clock.advance(30_000)
   const secret = await call($, 'cat .env')
   expect(secret.reason).toContain('never allowed here')
   expect(w.requests.every(r => !r.key.includes('.env'))).toBe(true)
-  // a never-approvable check in the same command keeps the whole command refused
+  // a check narrowed off in the same command keeps the whole command refused
   const mixed = await call($, `${PUSH} && rm -rf ~`)
   expect(mixed.reason).toContain('never allowed here')
 })
@@ -183,21 +183,47 @@ test('an approval never outranks a settings deny, and is not spent on one', asyn
   expect(w.requests[0]!.used).toBe(false)
 })
 
-test('without a root approval service, or with approvals narrowed off, the floor is final', async ($, on) => {
+test('without a root approval service the person is asked here; narrowed off, the floor is final', async ($, on) => {
   // something of the session's own user listening where the service should be
   const w = world(on, { uid: 1000 })
   on('tool.check', () => ({ decision: 'allow' as const }))
+  // $.ui.ask is AskUserQuestion beneath: dismissed, then Deny, then Run it once
+  const asked: string[] = []
+  const picks: (string | undefined)[] = [undefined, 'Deny', 'Run it once', 'Run it once']
+  on('tool.call', { tool: 'AskUserQuestion' }, (_$: unknown, e: any) => {
+    asked.push(e.questions[0].question)
+    const pick = picks.shift()
+    if (pick === undefined) throw new Error('dismissed')
+    return { result: { questions: e.questions, answers: Object.fromEntries(e.questions.map((q: any) => [q.question, pick])) } } as never
+  })
   await $.session.start({ source: 'startup', cwd: '/home/test/app' } as never)
-  expect((await call($, PUSH)).reason).toContain('never allowed here')
-  expect((await $.command.run({ command: 'permit', args: 'floor' } as never)).text).toContain('No approval service runs here')
+  expect((await $.command.run({ command: 'permit', args: 'floor' } as never)).text).toContain('asks you in a question card')
+
+  const unanswered = await call($, PUSH)
+  expect(unanswered.decision).toBe('deny')
+  expect(unanswered.reason).toContain('got no answer')
+  const denied = await call($, PUSH, 'toolu_2')
+  expect(denied.decision).toBe('deny')
+  expect(denied.reason).toContain('The user said no')
+  const approved = await call($, PUSH, 'toolu_3')
+  expect(approved.decision).toBe('allow')
+  const sudo = await call($, `sudo -S -p '' -v < /tmp/pw`, 'toolu_4')
+  expect(sudo.decision).toBe('allow')
+  expect(asked).toHaveLength(4)
+  expect(asked[0]).toContain(PUSH)
+  expect(w.requests).toEqual([])
+  // a call that is only being checked, not made, is never put to the person
+  expect((await $.tool.check({ tool: 'Bash', input: { command: PUSH } })).decision).toBe('deny')
+  expect(asked).toHaveLength(4)
 
   w.disk.set('/proc/net/tcp', sockets(0))
   w.disk.set(CONFIG, JSON.stringify({ floorApprovals: false }))
   await w.clock.advance(30_000)
-  expect((await call($, PUSH)).reason).toContain('never allowed here')
+  expect((await call($, PUSH, 'toolu_5')).reason).toContain('never allowed here')
   expect(w.requests).toEqual([])
+  expect(asked).toHaveLength(4)
   const floor = (await $.command.run({ command: 'permit', args: 'floor' } as never)).text
-  expect(floor).toContain('An approval service runs here')
+  expect(floor).toContain('narrowed off')
   expect(floor).not.toContain('(approvable)')
 })
 
